@@ -98,7 +98,7 @@
                     </div>
                     <div>
                         <h4 class="font-bold text-[11px] text-white group-hover:text-indigo-300 leading-tight">Place Terminal</h4>
-                        <span class="text-[10px] font-black text-emerald-400 font-mono-custom mt-0.5 block">$0.45bn</span>
+                        <span id="label-station-cost" class="text-[10px] font-black text-emerald-400 font-mono-custom mt-0.5 block">$450.0m</span>
                     </div>
                 </button>
 
@@ -109,7 +109,7 @@
                     </div>
                     <div>
                         <h4 class="font-bold text-[11px] text-white group-hover:text-amber-300 leading-tight">Lay Tracks</h4>
-                        <span class="text-[10px] font-black text-emerald-400 font-mono-custom mt-0.5 block">$0.08bn/km</span>
+                        <span id="label-track-cost" class="text-[10px] font-black text-emerald-400 font-mono-custom mt-0.5 block">$80.0m/km</span>
                     </div>
                 </button>
 
@@ -157,7 +157,7 @@
                 <div class="space-y-1">
                     <label class="text-[9px] font-bold text-slate-500 uppercase">Line Name</label>
                     <div class="flex gap-2">
-                        <input type="text" id="new-line-name" placeholder="e.g., Ginza Express..." class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-semibold">
+                        <input type="text" id="new-line-name" placeholder="e.g., Ginza Express..." class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-semibold font-mono-custom">
                         <!-- Shuffle Line Name -->
                         <button id="btn-shuffle-line-name" class="px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg flex items-center justify-center text-xs" title="Generate Random Name">
                             <i class="fa-solid fa-shuffle"></i>
@@ -192,34 +192,48 @@
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Municipal Performance Audit</h3>
 
             <div class="grid grid-cols-2 gap-2">
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
                     <div class="text-[8px] text-slate-500 uppercase font-bold">Total Stations</div>
                     <div id="stats-stations-count" class="text-lg font-bold text-white mt-0.5">0</div>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-855 text-center">
                     <div class="text-[8px] text-slate-500 uppercase font-bold">Tracks Built</div>
                     <div id="stats-tracks-count" class="text-lg font-bold text-white mt-0.5">0 km</div>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-855 text-center">
                     <div class="text-[8px] text-slate-500 uppercase font-bold">Operational Fleet</div>
                     <div id="stats-fleet-count" class="text-lg font-bold text-white mt-0.5">0 trains</div>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-855 text-center">
                     <div class="text-[8px] text-slate-500 uppercase font-bold">Hotspots Linked</div>
                     <div id="stats-hotspots-count" class="text-lg font-bold text-white mt-0.5">0/14</div>
+                </div>
+            </div>
+
+            <!-- Caching and File Syncer: Data Control Center -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 mt-1">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest">Data Control Center</h4>
+                <p class="text-[10px] text-slate-500 leading-normal">Save your current transit systems to the browser's persistent cache, or restore the saved configuration.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-save-game" class="py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all shadow-md">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Game
+                    </button>
+                    <button id="btn-load-game" class="py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all shadow-md">
+                        <i class="fa-solid fa-file-arrow-up"></i> Load Game
+                    </button>
                 </div>
             </div>
 
             <!-- Active Hotspots Status -->
             <div class="space-y-2">
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active City Hotspots</h4>
-                <div id="hotspot-status-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 font-mono-custom text-xs"></div>
+                <div id="hotspot-status-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 font-mono-custom text-xs"></div>
             </div>
         </div>
 
         <!-- Footnote Status Bar -->
         <footer class="p-3 bg-slate-950 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-400 mt-auto">
-            <span class="flex items-center gap-1"><i class="fa-solid fa-clock"></i> <span id="clock-display" class="font-mono-custom font-bold">Mon 08:00 AM</span></span>
+            <span class="flex items-center gap-1"><i class="fa-solid fa-clock"></i> <span id="clock-display" class="font-mono-custom font-bold">Mon, Jan 01 2026 08:00 AM</span></span>
             <span id="mode-badge" class="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 font-bold uppercase text-[8px] text-indigo-400 tracking-wider">Career Mode</span>
         </footer>
     </aside>
@@ -455,6 +469,24 @@
 
     <!-- MAIN SOUNDS & GAMEPLAY ENGINE -->
     <script>
+        // Adaptive Currency Formatter
+        function formatMoney(val) {
+            if (val === 'infinite') return "$Infinite";
+            const num = parseFloat(val);
+            if (isNaN(num)) return "$0.00";
+            if (num >= 1.0) {
+                return "$" + num.toFixed(2) + "bn";
+            } else if (num >= 0.001) {
+                return "$" + (num * 1000).toFixed(1) + "m";
+            } else {
+                return "$" + (num * 1000000).toFixed(0) + "k";
+            }
+        }
+
+        // Calendar Date Configurations
+        const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
         // Audio Synthesizer via Web Audio API
         let audioCtx = null;
         
@@ -673,7 +705,19 @@
 
         let activeTrains = []; 
         let hotspots = [];
-        let timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1 };
+        
+        // Date simulated state starting from Jan 01 2026
+        let timeClock = { 
+            ticks: 0, 
+            dayIndex: 0, 
+            days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
+            hour: 8, 
+            minute: 0, 
+            speed: 1,
+            monthIndex: 0,
+            date: 1,
+            year: 2026
+        };
 
         function distance(x1, y1, x2, y2) {
             return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -785,12 +829,12 @@
             const lengthKm = parseFloat((distance(s1.x, s1.y, s2.x, s2.y) / 50).toFixed(2));
             const cost = lengthKm * 0.08; 
 
-            if (gameMode === 'career' && budget < cost) {
-                displayToast("Construction Failure", `Insufficient funds! Costs $${cost.toFixed(2)}bn.`, "error");
+            if (gameMode === 'career' && budget !== 'infinite' && budget < cost) {
+                displayToast("Construction Failure", `Insufficient funds! Costs ${formatMoney(cost)}.`, "error");
                 return;
             }
 
-            if (gameMode === 'career') budget -= cost;
+            if (gameMode === 'career' && budget !== 'infinite') budget -= cost;
 
             const trackSegment = {
                 id: 'TRK' + Date.now() + Math.floor(Math.random() * 100),
@@ -979,13 +1023,31 @@
                         timeClock.hour = 0;
                         timeClock.dayIndex = (timeClock.dayIndex + 1) % 7;
                         
+                        // Increment Date with calendar logic
+                        timeClock.date++;
+                        if (timeClock.date > DAYS_IN_MONTH[timeClock.monthIndex]) {
+                            timeClock.date = 1;
+                            timeClock.monthIndex++;
+                            if (timeClock.monthIndex >= 12) {
+                                timeClock.monthIndex = 0;
+                                timeClock.year++;
+                            }
+                        }
+
+                        // Daily Autosave logic
+                        saveGameProgress(true);
+
                         // Weekly allocation digest
                         if (timeClock.dayIndex === 0) {
                             triggerWeeklyRewardAllocation();
                         }
                     }
                 }
-                document.getElementById('clock-display').textContent = `${timeClock.days[timeClock.dayIndex]} ${String(timeClock.hour).padStart(2, '0')}:${String(timeClock.minute).padStart(2, '0')} ${timeClock.hour >= 12 ? 'PM' : 'AM'}`;
+                
+                // Format Simulated Calendar Date
+                const dateStr = `${timeClock.days[timeClock.dayIndex]}, ${MONTHS[timeClock.monthIndex]} ${String(timeClock.date).padStart(2, '0')} ${timeClock.year}`;
+                const timeStr = `${String(timeClock.hour).padStart(2, '0')}:${String(timeClock.minute).padStart(2, '0')} ${timeClock.hour >= 12 ? 'PM' : 'AM'}`;
+                document.getElementById('clock-display').textContent = `${dateStr} ${timeStr}`;
             }
         }
 
@@ -1331,7 +1393,7 @@
                 if (activeTool === 'station') {
                     const cost = 0.45; 
                     if (gameMode === 'career' && budget !== 'infinite' && budget < cost) {
-                        displayToast("Insufficient Capital", "Need $0.45bn to build a subway terminal station", "error");
+                        displayToast("Insufficient Capital", `Need ${formatMoney(cost)} to build a subway terminal station`, "error");
                         return;
                     }
                     if (stations.some(s => distance(s.x, s.y, worldPos.x, worldPos.y) < 70)) {
@@ -1373,7 +1435,7 @@
                         
                         if (gameMode === 'career' && budget !== 'infinite') budget += 0.27; 
 
-                        displayToast("Demolition Complete", `Terminal cleared from urban grid. Recouped $0.27bn.`, "warn");
+                        displayToast("Demolition Complete", `Terminal cleared from urban grid. Recouped ${formatMoney(0.27)}.`, "warn");
                         triggerAlertSound();
                         updateHUD();
                     } else {
@@ -1513,7 +1575,7 @@
         const toolDemolishBtn = document.getElementById('tool-demolish-btn');
 
         const tools = [
-            { btn: toolStationBtn, val: 'station', display: 'Placing Station', desc: 'Click empty area to build platform for $0.45bn' },
+            { btn: toolStationBtn, val: 'station', display: 'Placing Station', desc: 'Click empty area to build platform for $450.0m' },
             { btn: toolTrackBtn, val: 'track', display: 'Laying Tracks', desc: 'Drag between stations to link them via tracks' },
             { btn: toolUpgradeBtn, val: 'upgrade', display: 'Upgrading Platform', desc: 'Click station platforms to open individual upgrade components' },
             { btn: toolDemolishBtn, val: 'demolish', display: 'Demolishing Sector', desc: 'Click stations to delete them with a 60% partial refund' }
@@ -1671,14 +1733,14 @@
 
                 line.trainsCount += 1;
                 spawnTrainOnLine(lineId);
-                displayToast("Train Added", `Locomotive commissioned to ${line.name}. Costs $0.15bn.`, "success");
+                displayToast("Train Added", `Locomotive commissioned to ${line.name}. Costs ${formatMoney(costPerTrain)}.`, "success");
             } else if (delta < 0 && line.trainsCount > 1) {
                 line.trainsCount -= 1;
                 const index = activeTrains.findIndex(t => t.lineId === lineId);
                 if (index !== -1) activeTrains.splice(index, 1);
 
                 if (gameMode === 'career' && budget !== 'infinite') budget += 0.09; 
-                displayToast("Fleet sold", `Locomotive sold. Recouped $0.09bn.`, "warn");
+                displayToast("Fleet sold", `Locomotive sold. Recouped ${formatMoney(0.09)}.`, "warn");
             }
 
             updateHUD();
@@ -1772,7 +1834,7 @@
                         </div>
                         <div>
                             <span class="text-slate-500 block">Total Profits Generated:</span>
-                            <span class="font-bold text-emerald-400 font-mono-custom">$${station.stats.revenueLifetime.toFixed(4)}bn</span>
+                            <span class="font-bold text-emerald-400 font-mono-custom">${formatMoney(station.stats.revenueLifetime)}</span>
                         </div>
                         <div>
                             <span class="text-slate-500 block">Peak Demand Hour:</span>
@@ -1809,7 +1871,7 @@
                             </div>
                             <button onclick="purchaseUpgrade('${station.id}', 'capacity', ${costCap})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
                                 <span>UPGRADE</span>
-                                <span class="text-[8px] text-emerald-400">+$${costCap.toFixed(2)}bn</span>
+                                <span class="text-[8px] text-emerald-400">+${formatMoney(costCap)}</span>
                             </button>
                         </div>
 
@@ -1821,7 +1883,7 @@
                             </div>
                             <button onclick="purchaseUpgrade('${station.id}', 'lineCap', ${costLine})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
                                 <span>UPGRADE</span>
-                                <span class="text-[8px] text-emerald-400">+$${costLine.toFixed(2)}bn</span>
+                                <span class="text-[8px] text-emerald-400">+${formatMoney(costLine)}</span>
                             </button>
                         </div>
 
@@ -1833,7 +1895,7 @@
                             </div>
                             <button onclick="purchaseUpgrade('${station.id}', 'transfer', ${costTransfer})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
                                 <span>UPGRADE</span>
-                                <span class="text-[8px] text-emerald-400">+$${costTransfer.toFixed(2)}bn</span>
+                                <span class="text-[8px] text-emerald-400">+${formatMoney(costTransfer)}</span>
                             </button>
                         </div>
 
@@ -1845,7 +1907,7 @@
                             </div>
                             <button onclick="purchaseUpgrade('${station.id}', 'speed', ${costSpeed})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
                                 <span>UPGRADE</span>
-                                <span class="text-[8px] text-emerald-400">+$${costSpeed.toFixed(2)}bn</span>
+                                <span class="text-[8px] text-emerald-400">+${formatMoney(costSpeed)}</span>
                             </button>
                         </div>
                     </div>
@@ -1988,7 +2050,7 @@
 
             // Close modal & run map simulation
             generatorModal.classList.add('hidden');
-            timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1 };
+            timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1, monthIndex: 0, date: 1, year: 2026 };
             
             setupMapSimulation(chosenDensity);
             updateSpeedButtons();
@@ -1996,20 +2058,133 @@
             displayToast("World Seeded Successfully", `Virtual grid expanded to ${chosenSize.toLocaleString()}px.`, "success");
         });
 
-        function updateHUD() {
-            if (budget === 'infinite') {
-                document.getElementById('budget-display').textContent = "$Infinite";
-            } else {
-                document.getElementById('budget-display').textContent = `$${budget.toFixed(2)}bn`;
-            }
+        // Serialization-Safe Save and Load progression
+        function saveGameProgress(silent = false) {
+            try {
+                // Safely convert station object references in tracks to IDs to prevent circular structure serialization issues
+                const serializedTracks = trackSegments.map(t => ({
+                    id: t.id,
+                    s1Id: t.s1.id,
+                    s2Id: t.s2.id,
+                    lengthKm: t.lengthKm,
+                    lineId: t.lineId
+                }));
 
-            document.getElementById('revenue-display').textContent = `+$${revenue.toFixed(3)}bn/mo`;
+                const saveData = {
+                    gameMode,
+                    budget,
+                    revenue,
+                    MAP_SIZE,
+                    camera,
+                    stations,
+                    tracks: serializedTracks,
+                    customLines,
+                    activeTrains,
+                    hotspots,
+                    timeClock
+                };
+
+                localStorage.setItem('metro_tycoon_save', JSON.stringify(saveData));
+                if (!silent) {
+                    displayToast("Blueprints Saved", "Transit network configuration committed to browser cache.", "success");
+                }
+            } catch (err) {
+                console.error("Save system failure: ", err);
+                if (!silent) {
+                    displayToast("Save Failed", "Could not commit blueprints to persistent local cache.", "error");
+                }
+            }
+        }
+
+        function loadGameProgress() {
+            try {
+                const rawSave = localStorage.getItem('metro_tycoon_save');
+                if (!rawSave) {
+                    displayToast("No Saved Progress", "No existing blueprints found in browser cache.", "warn");
+                    return;
+                }
+
+                const data = JSON.parse(rawSave);
+
+                // Restore primitive state values
+                gameMode = data.gameMode || 'career';
+                budget = data.budget !== undefined ? data.budget : 15.0;
+                revenue = data.revenue !== undefined ? data.revenue : 0.0;
+                MAP_SIZE = data.MAP_SIZE || 2000;
+                camera = data.camera || camera;
+                stations = data.stations || [];
+                customLines = data.customLines || [];
+                activeTrains = data.activeTrains || [];
+                hotspots = data.hotspots || [];
+                timeClock = data.timeClock || timeClock;
+
+                // Sync HUD elements to the loaded configurations
+                if (gameMode === 'sandbox') {
+                    sandboxBtn.className = "px-2 py-0.5 text-[9px] font-bold rounded-lg bg-indigo-600 text-white transition-all";
+                    careerBtn.className = "px-2 py-0.5 text-[9px] font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+                    document.getElementById('mode-badge').textContent = "Sandbox Mode";
+                } else {
+                    careerBtn.className = "px-2 py-0.5 text-[9px] font-bold rounded-lg bg-indigo-600 text-white transition-all";
+                    sandboxBtn.className = "px-2 py-0.5 text-[9px] font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+                    document.getElementById('mode-badge').textContent = "Career Mode";
+                }
+
+                // Restore complex circular reference properties (tracks pointing to stations)
+                const deserializedTracks = [];
+                if (data.tracks) {
+                    data.tracks.forEach(track => {
+                        const s1 = stations.find(s => s.id === track.s1Id);
+                        const s2 = stations.find(s => s.id === track.s2Id);
+                        if (s1 && s2) {
+                            deserializedTracks.push({
+                                id: track.id,
+                                s1: s1,
+                                s2: s2,
+                                lengthKm: track.lengthKm,
+                                lineId: track.lineId
+                            });
+                        }
+                    });
+                }
+                trackSegments = deserializedTracks;
+
+                displayToast("Blueprints Restored", "Retrieved and rebuilt transit grid configuration.", "success");
+                triggerUpgradeSound();
+
+                // Close active inspectors to prevent stale node values
+                document.getElementById('inspector-panel').classList.add('hidden');
+                selectedNodeForInspector = null;
+
+                // Synchronize lists
+                updateHUD();
+                updateCustomLinesList();
+                updateNetworkStats();
+                renderMap();
+
+            } catch (err) {
+                console.error("Load system failure: ", err);
+                displayToast("Restoration Error", "Save data corrupted or invalid.", "error");
+            }
+        }
+
+        // Setup save and load UI binding triggers
+        document.getElementById('btn-save-game').addEventListener('click', () => saveGameProgress(false));
+        document.getElementById('btn-load-game').addEventListener('click', loadGameProgress);
+
+        function updateHUD() {
+            document.getElementById('budget-display').textContent = formatMoney(budget);
+            document.getElementById('revenue-display').textContent = `+${formatMoney(revenue)}/mo`;
+            
             let totalPass = stations.reduce((sum, s) => sum + s.currentRidership, 0);
             document.getElementById('ridership-display').textContent = `${(totalPass/1000).toFixed(1)}k/mo`;
 
             const activeCount = activeTrains.length;
             const lineTrainsTotal = customLines.reduce((sum, l) => sum + l.trainsCount, 0);
             document.getElementById('trains-active-count').textContent = `${activeCount}/${lineTrainsTotal} active`;
+
+            // Adjust dynamic values for construct tool cost markers
+            document.getElementById('label-station-cost').textContent = formatMoney(0.45);
+            document.getElementById('label-track-cost').textContent = `${formatMoney(0.08)}/km`;
         }
 
         // Weekly Reward allocations
@@ -2054,7 +2229,19 @@
             activeLineId = 'L1';
             activeTrains = [];
             stations = [];
-            timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1 };
+            
+            // Set base progression clock starting Jan 1st 2026
+            timeClock = { 
+                ticks: 0, 
+                dayIndex: 0, 
+                days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
+                hour: 8, 
+                minute: 0, 
+                speed: 1,
+                monthIndex: 0,
+                date: 1,
+                year: 2026
+            };
             
             customLines = [
                 { id: 'L1', name: getRandomLineName(), color: '#10b981', trainsCount: 1, ticketPrice: 2.50 },
