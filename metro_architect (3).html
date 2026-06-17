@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Metro Tycoon - Metropolitan Transit Planner</title>
+    <!-- Tailwind CSS for high fidelity dashboard interface -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        .font-mono-custom {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbars for clean UI lists */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col md:flex-row overflow-hidden bg-slate-950 text-slate-100">
+
+    <!-- Ambient Audio Context Activator -->
+    <div id="audio-toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-full shadow-2xl cursor-pointer flex items-center gap-3 transition-all duration-300 transform hover:scale-105">
+        <i class="fa-solid fa-volume-high animate-pulse"></i>
+        <span>Enable Metro Sound Engine</span>
+    </div>
+
+    <!-- Live Toast Container for Alerts -->
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- LEFT SIDEBAR: Architecture Control Panel -->
+    <aside class="w-full md:w-96 h-[45%] md:h-full bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col z-20 flex-shrink-0 shadow-2xl overflow-hidden">
+        
+        <!-- Sidebar Title Header -->
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                    <i class="fa-solid fa-train-subway text-xs"></i>
+                </div>
+                <div>
+                    <h1 class="text-xs font-black tracking-wider uppercase text-white leading-none">Metro Tycoon</h1>
+                    <span class="text-[9px] text-indigo-400 uppercase font-bold tracking-widest">Procedural Architect</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-800">
+                <i class="fa-solid fa-train text-[9px] text-indigo-400"></i>
+                <span id="trains-active-count" class="text-[10px] font-bold text-slate-300 font-mono-custom">0/0 active</span>
+            </div>
+        </div>
+
+        <!-- Sidebar Navigation Tabs -->
+        <div class="flex border-b border-slate-800 bg-slate-950/50">
+            <button id="tab-construct-btn" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider text-indigo-400 border-b-2 border-indigo-500 transition-all">
+                <i class="fa-solid fa-toolbox mr-1.5"></i> Construct
+            </button>
+            <button id="tab-lines-btn" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-route mr-1.5"></i> Custom Lines
+            </button>
+            <button id="tab-network-btn" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-chart-simple mr-1.5"></i> Overview
+            </button>
+        </div>
+
+        <!-- TAB CONTENT 1: CONSTRUCTION BLUEPRINTS -->
+        <div id="tab-construct" class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Transit Blueprints</h3>
+                <p class="text-[10px] text-slate-500 leading-relaxed">Tap a tool, then interact with the map. Drag empty space to pan/scroll. Use the zoom controllers or scroll wheel/pinch to navigate.</p>
+            </div>
+
+            <!-- Architecture Tools List -->
+            <div class="grid grid-cols-2 gap-2">
+                <!-- Tool: Place Station -->
+                <button id="tool-station-btn" class="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-left flex flex-col justify-between transition-all group">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-2 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-circle-dot text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-[11px] text-white group-hover:text-indigo-300 leading-tight">Place Terminal</h4>
+                        <span class="text-[10px] font-black text-emerald-400 font-mono-custom mt-0.5 block">$0.45bn</span>
+                    </div>
+                </button>
+
+                <!-- Tool: Lay Tracks -->
+                <button id="tool-track-btn" class="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-left flex flex-col justify-between transition-all group">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-2 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-road-bridge text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-[11px] text-white group-hover:text-amber-300 leading-tight">Lay Tracks</h4>
+                        <span class="text-[10px] font-black text-emerald-400 font-mono-custom mt-0.5 block">$0.08bn/km</span>
+                    </div>
+                </button>
+
+                <!-- Tool: Upgrade Terminal Node -->
+                <button id="tool-upgrade-btn" class="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-left flex flex-col justify-between transition-all group">
+                    <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-2 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-circle-arrow-up text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-[11px] text-white group-hover:text-purple-300 leading-tight">Inspect/Upgrade</h4>
+                        <span class="text-[10px] font-black text-slate-400 font-mono-custom mt-0.5 block">Select & Edit</span>
+                    </div>
+                </button>
+
+                <!-- Tool: Demolish Terminal -->
+                <button id="tool-demolish-btn" class="p-3 bg-slate-950 border border-slate-800 hover:border-red-500/50 rounded-xl text-left flex flex-col justify-between transition-all group">
+                    <div class="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-2 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-ban text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-[11px] text-white group-hover:text-red-300 leading-tight">Demolish</h4>
+                        <span class="text-[9px] font-bold text-slate-500 uppercase mt-0.5 block">Refunds 60%</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Terminal Inspector Section (Highly Advanced Upgrades) -->
+            <div id="inspector-panel" class="mt-2 p-3 bg-slate-950 rounded-xl border border-slate-800 hidden flex flex-col gap-3">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-900">
+                    <h4 class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Node Terminal Inspector</h4>
+                    <button id="inspector-close-btn" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <!-- Dynamic Content (Stats, Upgrades, etc.) -->
+                <div id="inspector-content" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 2: CUSTOM LINE BRANDING -->
+        <div id="tab-lines" class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto hidden">
+            <!-- Brand Creator Form -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest">Brand Custom Route</h4>
+                
+                <div class="space-y-1">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase">Line Name</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-line-name" placeholder="e.g., Ginza Express..." class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-semibold">
+                        <!-- Shuffle Line Name -->
+                        <button id="btn-shuffle-line-name" class="px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg flex items-center justify-center text-xs" title="Generate Random Name">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1 space-y-1">
+                        <label class="text-[9px] font-bold text-slate-500 uppercase">Route Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="new-line-color" value="#6366f1" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer">
+                            <span id="color-hex-label" class="text-[10px] font-mono-custom text-slate-400">#6366f1</span>
+                        </div>
+                    </div>
+                    
+                    <button id="create-line-btn" class="self-end bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2 px-4 rounded-lg transition-all">
+                        Incorporate Route
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Lines Scroll list -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Operating Transit Lines</h4>
+                <div id="lines-list-container" class="space-y-2 flex-1 overflow-y-auto pr-1"></div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 3: NETWORK OVERVIEW -->
+        <div id="tab-network" class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto hidden">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Municipal Performance Audit</h3>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold">Total Stations</div>
+                    <div id="stats-stations-count" class="text-lg font-bold text-white mt-0.5">0</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold">Tracks Built</div>
+                    <div id="stats-tracks-count" class="text-lg font-bold text-white mt-0.5">0 km</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold">Operational Fleet</div>
+                    <div id="stats-fleet-count" class="text-lg font-bold text-white mt-0.5">0 trains</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold">Hotspots Linked</div>
+                    <div id="stats-hotspots-count" class="text-lg font-bold text-white mt-0.5">0/14</div>
+                </div>
+            </div>
+
+            <!-- Active Hotspots Status -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active City Hotspots</h4>
+                <div id="hotspot-status-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 font-mono-custom text-xs"></div>
+            </div>
+        </div>
+
+        <!-- Footnote Status Bar -->
+        <footer class="p-3 bg-slate-950 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-400 mt-auto">
+            <span class="flex items-center gap-1"><i class="fa-solid fa-clock"></i> <span id="clock-display" class="font-mono-custom font-bold">Mon 08:00 AM</span></span>
+            <span id="mode-badge" class="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 font-bold uppercase text-[8px] text-indigo-400 tracking-wider">Career Mode</span>
+        </footer>
+    </aside>
+
+    <!-- RIGHT SECTION: Live Map Canvas and HUD Overlay -->
+    <div class="flex-1 h-[55%] md:h-full relative flex items-center justify-center bg-slate-950 overflow-hidden">
+        
+        <!-- TOP HUD PANEL -->
+        <div class="absolute top-4 left-4 right-4 flex justify-between items-center pointer-events-none z-10 flex-wrap gap-2">
+            <!-- Left Info Stats -->
+            <div class="flex items-center gap-2 bg-slate-900/95 backdrop-blur border border-slate-800 p-2 rounded-2xl shadow-xl pointer-events-auto flex-wrap">
+                <div class="bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-850 flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-emerald-400 text-xs"></i>
+                    <div>
+                        <div class="text-[7px] text-slate-500 uppercase font-bold leading-none">Capital Budget</div>
+                        <div id="budget-display" class="text-xs font-black text-emerald-400 font-mono-custom">$15.00bn</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-850 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-cyan-400 text-xs"></i>
+                    <div>
+                        <div class="text-[7px] text-slate-500 uppercase font-bold leading-none">Net Revenue</div>
+                        <div id="revenue-display" class="text-xs font-black text-cyan-400 font-mono-custom">+$0.00bn/mo</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-850 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-indigo-400 text-xs"></i>
+                    <div>
+                        <div class="text-[7px] text-slate-500 uppercase font-bold leading-none">Ridership</div>
+                        <div id="ridership-display" class="text-xs font-bold text-white font-mono-custom">0/mo</div>
+                    </div>
+                </div>
+
+                <!-- Mode Selector -->
+                <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-850 text-xs">
+                    <button id="mode-career-btn" class="px-2 py-0.5 text-[9px] font-bold rounded-lg bg-indigo-600 text-white transition-all">
+                        Career
+                    </button>
+                    <button id="mode-sandbox-btn" class="px-2 py-0.5 text-[9px] font-bold rounded-lg text-slate-400 hover:text-white transition-all">
+                        Sandbox
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clock, Speeds & Generator Config -->
+            <div class="flex items-center gap-2 bg-slate-900/95 backdrop-blur border border-slate-800 p-2 rounded-2xl shadow-xl pointer-events-auto">
+                <!-- Map Configuration Menu Button -->
+                <button id="btn-map-settings" class="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black transition-all flex items-center gap-1 shadow-md shadow-indigo-500/20 pointer-events-auto" title="Map Generator Settings">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span class="hidden sm:inline">Generator Settings</span>
+                </button>
+
+                <!-- Camera Controls -->
+                <div class="flex items-center bg-slate-950 rounded-xl border border-slate-850 p-1 gap-1">
+                    <button id="btn-zoom-in" class="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white flex items-center justify-center pointer-events-auto" title="Zoom In">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button id="btn-zoom-out" class="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white flex items-center justify-center pointer-events-auto" title="Zoom Out">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-850">
+                    <button id="btn-pause" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-white transition-colors pointer-events-auto" title="Pause">
+                        <i class="fa-solid fa-pause text-xs"></i>
+                    </button>
+                    <button id="btn-speed-1" class="w-6 h-6 rounded flex items-center justify-center bg-indigo-600 text-white text-[10px] font-bold transition-colors pointer-events-auto" title="1x Speed">
+                        1x
+                    </button>
+                    <button id="btn-speed-2" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-white text-[10px] font-bold transition-colors pointer-events-auto" title="2x Speed">
+                        2x
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Tool Indicator -->
+        <div class="absolute top-20 left-4 bg-slate-900/95 backdrop-blur border border-indigo-500/30 p-2 rounded-xl shadow-2xl z-10 pointer-events-none flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></div>
+            <div>
+                <span id="active-tool-display" class="text-[10px] font-extrabold text-indigo-300 uppercase tracking-wider block">Inspecting Map</span>
+            </div>
+        </div>
+
+        <!-- Style Swapper Dropdown -->
+        <div class="absolute top-20 right-4 bg-slate-900/95 backdrop-blur border border-slate-800 p-2 rounded-xl shadow-2xl z-10 pointer-events-auto flex items-center gap-2">
+            <select id="global-theme-select" class="bg-slate-950 border border-slate-800 text-[10px] rounded-lg p-1 text-indigo-300 font-bold focus:outline-none focus:border-indigo-500 cursor-pointer">
+                <option value="tokyo">Tokyo Style (Minimalist Rings)</option>
+                <option value="nyc">NYC Style (Classic Bullets)</option>
+                <option value="london">London Style (TfL Roundels)</option>
+                <option value="neon">Neon Style (Hyperglow Grid)</option>
+            </select>
+        </div>
+
+        <!-- Map Navigation / Help Tip Bar -->
+        <div class="absolute bottom-4 left-4 right-4 bg-slate-900/95 backdrop-blur border border-slate-800 p-3 rounded-xl shadow-2xl z-10 flex flex-col sm:flex-row justify-between items-center gap-3 pointer-events-none">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-indigo-400 text-xs"></i>
+                <p class="text-[11px] text-slate-300">
+                    <span class="font-bold text-white">Pan: Drag empty space. Zoom: Scroll/Pinch.</span> Choose active color in <span class="text-indigo-400 font-semibold">Custom Lines</span>, then drag tracks!
+                </p>
+            </div>
+            <div class="flex items-center gap-3 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-indigo-400 animate-pulse text-[7px]"></i> Hotspot</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-subway text-emerald-400 text-[7px]"></i> Node</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-train text-amber-400 text-[7px]"></i> Train</span>
+            </div>
+        </div>
+
+        <!-- Tutorial Modal -->
+        <div id="tutorial-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-30 flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-md w-full shadow-2xl">
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-indigo-600/10 border border-indigo-500 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">
+                        <i class="fa-solid fa-subway"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white tracking-tight">Become a Metro Tycoon</h3>
+                    <p class="text-slate-400 text-xs mt-2 leading-relaxed">
+                        Design multi-million dollar high-speed rapid-transit networks. Expand urban subway infrastructure across geographic hotspots to drive commuter traffic and maximize municipal revenues!
+                    </p>
+                </div>
+                <div class="space-y-2 mt-4">
+                    <div class="flex items-start gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-850">
+                        <i class="fa-solid fa-wallet text-emerald-400 mt-0.5 text-xs"></i>
+                        <div>
+                            <h5 class="text-[10px] font-bold text-slate-200 uppercase">Capital Budget Limits</h5>
+                            <p class="text-[9px] text-slate-400">Career mode challenges you with a high-stakes $15.0bn budget limit. Upgraded terminals yield compound cash returns.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-850">
+                        <i class="fa-solid fa-route text-indigo-400 mt-0.5 text-xs"></i>
+                        <div>
+                            <h5 class="text-[10px] font-bold text-slate-200 uppercase">Dynamic Aesthetics</h5>
+                            <p class="text-[9px] text-slate-400">Instantly switch between iconic themes including Tokyo Metro, classic New York MTA, London Tubes, or cyber-grid glows.</p>
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-start-game" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all duration-300 transform hover:scale-[1.01]">
+                    Start Blueprints
+                </button>
+            </div>
+        </div>
+
+        <!-- Map Generator Configuration Modal (Dynamic Map Sizes) -->
+        <div id="generator-modal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-40 hidden flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-indigo-500/40 p-6 rounded-3xl max-w-md w-full shadow-2xl flex flex-col gap-4">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-indigo-600/10 border border-indigo-500 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-2 text-lg">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white tracking-tight">Procedural Map Generator</h3>
+                    <p class="text-slate-400 text-xs mt-1">Configure virtual map grid size, hotspot density and municipal settings.</p>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <!-- Virtual Bounds Config -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between font-bold text-slate-400">
+                            <span>Virtual Map Bounds</span>
+                            <span id="label-bounds-size" class="text-indigo-400 font-mono-custom font-bold">2,000 x 2,000</span>
+                        </div>
+                        <input type="range" id="input-map-size" min="1000" max="10000" step="500" value="2000" class="w-full accent-indigo-500 cursor-pointer">
+                        <span class="text-[9px] text-slate-500">Larger sizes (up to 10,000) offer sprawling geographical layout challenges.</span>
+                    </div>
+
+                    <!-- Hotspot Density Options -->
+                    <div class="space-y-1">
+                        <label class="font-bold text-slate-400">Procedural Hotspot Density</label>
+                        <select id="select-hotspot-density" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                            <option value="standard">Standard (8 Major, 6 Minor)</option>
+                            <option value="dense">Dense Network (10 Major, 10 Minor)</option>
+                            <option value="sprawling">Sprawling Frontier (12 Major, 15 Minor)</option>
+                        </select>
+                    </div>
+
+                    <!-- Sandbox/Career starting cash -->
+                    <div class="space-y-1">
+                        <label class="font-bold text-slate-400">Starting Municipal Capital</label>
+                        <select id="select-starting-cash" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                            <option value="15">$15.00bn (Standard Career)</option>
+                            <option value="50">$50.00bn (Large Venture)</option>
+                            <option value="100">$100.00bn (Mega Project)</option>
+                            <option value="infinite">Infinite (Sandbox Builder)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2.5 mt-2">
+                    <button id="btn-close-generator" class="flex-1 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-400 hover:text-white transition-all">
+                        Cancel
+                    </button>
+                    <button id="btn-confirm-generate" class="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-all">
+                        Generate World
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Reward allocation modal -->
+        <div id="weekly-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-30 hidden flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-indigo-500/30 p-6 rounded-3xl max-w-sm w-full shadow-2xl">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-indigo-600/10 border border-indigo-500 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-lg">
+                        <i class="fa-solid fa-gift"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white tracking-tight">Weekly Capital Allocation</h3>
+                    <p class="text-slate-400 text-xs mt-1">Select your approved municipal development grant.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button id="reward-train" class="flex flex-col items-center justify-center p-3 bg-slate-950 hover:bg-indigo-950 border border-slate-850 hover:border-indigo-500 rounded-xl transition-all duration-300 group text-center">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-2 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-train text-sm"></i>
+                        </div>
+                        <span class="font-bold text-[10px] text-slate-200">Locomotive</span>
+                        <span class="text-[8px] text-slate-500 mt-1 leading-tight">Gain 1 free reserve train</span>
+                    </button>
+                    <button id="reward-cash" class="flex flex-col items-center justify-center p-3 bg-slate-950 hover:bg-indigo-950 border border-slate-850 hover:border-indigo-500 rounded-xl transition-all duration-300 group text-center">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-2 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-money-bill-wave text-sm"></i>
+                        </div>
+                        <span class="font-bold text-[10px] text-slate-200">Municipal Grant</span>
+                        <span class="text-[8px] text-slate-500 mt-1 leading-tight">Gain +$1.00bn liquid cash</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- The map canvas viewport -->
+        <canvas id="metro-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+    </div>
+
+    <!-- MAIN SOUNDS & GAMEPLAY ENGINE -->
+    <script>
+        // Audio Synthesizer via Web Audio API
+        let audioCtx = null;
+        
+        function initAudioEngine() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const tag = document.getElementById('audio-toast');
+            if (tag) tag.classList.add('hidden');
+        }
+
+        function playSynthTone(freq, type = 'sine', duration = 0.2, volume = 0.08) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function triggerCashSound() {
+            playSynthTone(587.33, 'triangle', 0.15, 0.04);
+            setTimeout(() => playSynthTone(880.00, 'triangle', 0.25, 0.04), 80);
+        }
+
+        function triggerLayTrackSound() {
+            playSynthTone(293.66, 'sine', 0.1, 0.08);
+            setTimeout(() => playSynthTone(349.23, 'sine', 0.12, 0.08), 50);
+        }
+
+        function triggerUpgradeSound() {
+            playSynthTone(440, 'sine', 0.12, 0.06);
+            setTimeout(() => playSynthTone(554.37, 'sine', 0.12, 0.06), 80);
+            setTimeout(() => playSynthTone(659.25, 'sine', 0.2, 0.06), 160);
+        }
+
+        function triggerAlertSound() {
+            playSynthTone(180, 'sawtooth', 0.35, 0.08);
+        }
+
+        // Active notification triggers
+        function displayToast(title, desc, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const borderColors = {
+                info: 'border-indigo-500 bg-indigo-950/90 text-indigo-200',
+                success: 'border-emerald-500 bg-emerald-950/90 text-emerald-200',
+                warn: 'border-amber-500 bg-amber-950/90 text-amber-200',
+                error: 'border-red-500 bg-red-950/90 text-red-200'
+            };
+
+            const icons = {
+                info: 'fa-circle-info text-indigo-400',
+                success: 'fa-circle-check text-emerald-400',
+                warn: 'fa-triangle-exclamation text-amber-400',
+                error: 'fa-radiation text-red-400'
+            };
+
+            toast.className = `p-3.5 rounded-xl border border-l-4 shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-2 opacity-0 max-w-sm pointer-events-auto ${borderColors[type]}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type]} text-sm"></i>
+                <div>
+                    <h5 class="text-[11px] font-bold text-white leading-none">${title}</h5>
+                    <p class="text-[9px] mt-0.5">${desc}</p>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Map theme styles definitions
+        const STYLES = {
+            tokyo: {
+                bg: '#0b0f19',
+                grid: '#181e2e',
+                stationFill: '#ffffff',
+                stationOutline: '#0f172a',
+                stationSymbolColor: '#10b981',
+                lineWidth: 6,
+                glow: false,
+                stationRadius: 15,
+                trainFill: '#0b0f19',
+                trainStroke: '#fff',
+                font: 'Inter'
+            },
+            nyc: {
+                bg: '#111111',
+                grid: '#222222',
+                stationFill: '#ffffff',
+                stationOutline: '#333333',
+                stationSymbolColor: '#f59e0b',
+                lineWidth: 8,
+                glow: false,
+                stationRadius: 16,
+                trainFill: '#222',
+                trainStroke: '#aaa',
+                font: 'Courier New'
+            },
+            london: {
+                bg: '#0f1423',
+                grid: '#171e35',
+                stationFill: '#ffffff',
+                stationOutline: '#1e3a8a',
+                stationSymbolColor: '#ef4444',
+                lineWidth: 7,
+                glow: false,
+                stationRadius: 15,
+                trainFill: '#1e3a8a',
+                trainStroke: '#ef4444',
+                font: 'Georgia'
+            },
+            neon: {
+                bg: '#020205',
+                grid: '#090918',
+                stationFill: '#000000',
+                stationOutline: '#6366f1',
+                stationSymbolColor: '#ec4899',
+                lineWidth: 7,
+                glow: true,
+                stationRadius: 14,
+                trainFill: '#020205',
+                trainStroke: '#ec4899',
+                font: 'JetBrains Mono'
+            }
+        };
+
+        const NAMES_POOL = {
+            tokyo: ['Shinjuku', 'Shibuya', 'Tokyo', 'Akihabara', 'Ikebukuro', 'Ginza', 'Ueno', 'Roppongi', 'Asakusa', 'Shinagawa', 'Kanda', 'Nihombashi', 'Otemachi', 'Harajuku', 'Ebisu', 'Nakano', 'Meguro', 'Roppongi Itchome', 'Omotesando', 'Kasumigaseki', 'Kojimachi', 'Shinjuku-sanchome', 'Yoyogi', 'Okaimachi', 'Akasaka', 'Kagurazaka', 'Monzen-nakacho', 'Iidabashi', 'Tsukiji', 'Asakusa-bashi', 'Toyosu', 'Minato-Mirai', 'Ueno-okachimachi', 'Kiyosumi-shirakawa'],
+            nyc: ['Grand Central', 'Penn Station', 'Times Square', 'Wall Street', 'Fulton Center', 'Astoria Blvd', 'Bedford Ave', 'Flushing Main', 'Flatbush Ave', 'Chambers St', 'Coney Island', 'Canal St', 'Lexington Ave', 'Utica Ave', 'Prospect Park', 'Atlantic Ave', 'Jay St-Metrotech', 'Kings Highway', 'Jackson Hts', 'Queensboro Plaza', 'Christopher St', 'Houston St', 'Spring St', 'Prince St', 'Bleecker St', 'Delancey St', 'DeKalb Ave', 'Myrtle-Wyckoff', 'Court St', 'Lorimer St'],
+            london: ["King's Cross", 'Paddington', 'Waterloo', 'Baker Street', 'Piccadilly Circus', 'Westminster', 'Euston', 'Victoria', 'Covent Garden', 'Liverpool Street', 'Brixton', 'Tottenham Court', 'Bond Street', 'Green Park', 'Leicester Square', 'Charing Cross', 'Holborn', 'Chancery Lane', 'St. Paul\'s', 'Bank', 'London Bridge', 'Southwark', 'Waterloo East', 'Embankment', 'Temple', 'Blackfriars', 'Mansion House', 'Cannon Street', 'Monument', 'Tower Hill'],
+            generic: ['Grand Central', 'Parkside Plaza', 'Harbor View', 'Waterfront Hub', 'Riverside Boulevard', 'University Commons', 'Stadium Park', 'Downtown Crossing', 'Central Heights', 'Industrial Valley', 'Oak Ridge', 'Maplewood Crossing', 'Pine Crest', 'Birchwood Terminal', 'Cedar Junction', 'Elm Street Commons', 'Willow Creek Plaza', 'Brookside Heights', 'Highland Ridge', 'Fairview Gateway', 'Glenwood Junction', 'Pleasant Valley', 'Sunset Hills', 'Ocean Breeze', 'Sunnyvale Junction']
+        };
+
+        const HOTSPOTS_POOL = [
+            // MAJOR HOTSPOTS
+            { name: 'Metropolitan Airport Hub', type: 'Airport', multiplier: 2.8, desc: 'High revenue, business commuters', tier: 'major' },
+            { name: 'Financial District Core', type: 'Finance', multiplier: 2.2, desc: 'Huge morning rush hour surges', tier: 'major' },
+            { name: 'Downtown Central Crossing', type: 'Downtown', multiplier: 2.0, desc: 'Massive base passenger density', tier: 'major' },
+            { name: 'National Arena / Stadium', type: 'Stadium', multiplier: 2.5, desc: 'Generates tourist spike events', tier: 'major' },
+            { name: 'Silicon Valley Tech Park', type: 'Tech', multiplier: 2.4, desc: 'Rushes of technical consultants', tier: 'major' },
+            { name: 'Westminster College Campus', type: 'University', multiplier: 1.9, desc: 'Steady stream of academic commuters', tier: 'major' },
+            { name: 'Marina Harbor Shopping Bay', type: 'Marina', multiplier: 2.3, desc: 'Heavy weekend tourist density', tier: 'major' },
+            { name: 'Grand Exhibition Plaza', type: 'Exhibition', multiplier: 2.1, desc: 'Dynamic crowds from world conventions', tier: 'major' },
+            
+            // MINOR HOTSPOTS (Smaller local targets)
+            { name: 'Neighborhood Organic Market', type: 'Market', multiplier: 1.4, desc: 'Local neighborhood grocery hub', tier: 'minor' },
+            { name: 'General Medical Center', type: 'Hospital', multiplier: 1.5, desc: 'Steady patient & employee transit', tier: 'minor' },
+            { name: 'Suburban Office Park', type: 'Offices', multiplier: 1.3, desc: 'Mid-scale business park commuter traffic', tier: 'minor' },
+            { name: 'District Public High School', type: 'School', multiplier: 1.25, desc: 'Student commute peak morning & afternoon', tier: 'minor' },
+            { name: 'Central Municipal Park', type: 'Park', multiplier: 1.35, desc: 'Family and tourist weekend commutes', tier: 'minor' },
+            { name: 'Suburban Shopping Plaza', type: 'Shopping', multiplier: 1.45, desc: 'Continuous local consumer traffic', tier: 'minor' }
+        ];
+
+        // Random Line Naming Templates
+        const LINE_NAME_PREFIXES = ['Subway Line', 'Metro Rapid', 'Central Express', 'District Transit', 'Urban Shuttle', 'Intercity Link', 'Commuter Line', 'City Connect', 'Sky Rail', 'Boulevard Link'];
+        const LINE_NAME_SUFFIXES = ['Alpha', 'Beta', 'Yamanote Outer', 'Chiyoda Loop', 'Broadway', 'Manhattan', 'Lexington', 'Piccadilly', 'Victoria', 'Circle Route', 'Crossrail'];
+
+        function getRandomLineName() {
+            const prefix = LINE_NAME_PREFIXES[Math.floor(Math.random() * LINE_NAME_PREFIXES.length)];
+            const suffix = LINE_NAME_SUFFIXES[Math.floor(Math.random() * LINE_NAME_SUFFIXES.length)];
+            return `${prefix} - ${suffix}`;
+        }
+
+        // System canvas setups
+        const canvas = document.getElementById('metro-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Master state configuration
+        let gameMode = 'career'; 
+        let budget = 15.0; // Billions
+        let revenue = 0.0;
+        let activeTool = 'inspect'; 
+        let activeLineId = 'L1';
+        let selectedTheme = 'tokyo';
+
+        // Camera System for Virtual Grid Map (Configurable Bounds)
+        let MAP_SIZE = 2000; // Default size, can scale up to 10000 dynamically
+        let camera = {
+            x: 1000, 
+            y: 1000, 
+            zoom: 0.6,
+            minZoom: 0.15, // Lower limit for super-zoomed viewports (e.g. 10kx10k maps)
+            maxZoom: 2.0
+        };
+
+        // Track user drag pan state
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+        let cameraStart = { x: 0, y: 0 };
+
+        let dragStartStation = null;
+        let dragCurrentPos = { x: 0, y: 0 };
+        let isDraggingTrack = false;
+        let selectedNodeForInspector = null;
+
+        let stations = [];
+        let trackSegments = []; 
+        let customLines = [
+            { id: 'L1', name: 'Yamanote Loop', color: '#10b981', trainsCount: 1, ticketPrice: 2.50 },
+            { id: 'L2', name: 'Chuo Express', color: '#f97316', trainsCount: 1, ticketPrice: 3.00 }
+        ];
+
+        let activeTrains = []; 
+        let hotspots = [];
+        let timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1 };
+
+        function distance(x1, y1, x2, y2) {
+            return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        }
+
+        // Screen coordinates to virtual coordinates
+        function screenToWorld(sx, sy) {
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            const wx = (sx - width / 2) / camera.zoom + camera.x;
+            const wy = (sy - height / 2) / camera.zoom + camera.y;
+            return { x: wx, y: wy };
+        }
+
+        // Virtual coordinates to screen coordinates
+        function worldToScreen(wx, wy) {
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            const sx = (wx - camera.x) * camera.zoom + width / 2;
+            const sy = (wy - camera.y) * camera.zoom + height / 2;
+            return { x: sx, y: sy };
+        }
+
+        function getStationAtPosition(x, y) {
+            const currentStyle = STYLES[selectedTheme];
+            // Radius check adjusted for zoom / scale
+            return stations.find(s => distance(s.x, s.y, x, y) < currentStyle.stationRadius * 1.5 + 5);
+        }
+
+        function generateStation(x, y, forcedName = null, isHotspotLinked = false, hotspotType = null) {
+            const themeNames = NAMES_POOL[selectedTheme] || NAMES_POOL.generic;
+            const unusedNames = themeNames.filter(name => !stations.some(s => s.name === name));
+            let finalName = forcedName;
+            
+            if (!finalName) {
+                if (unusedNames.length > 0) {
+                    finalName = unusedNames[Math.floor(Math.random() * unusedNames.length)];
+                } else {
+                    const fallbackName = NAMES_POOL.generic[Math.floor(Math.random() * NAMES_POOL.generic.length)];
+                    finalName = `${fallbackName} ${Math.floor(Math.random() * 90) + 10}`;
+                }
+            }
+
+            if (stations.some(s => s.name === finalName) && !forcedName) {
+                finalName += ` ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+            }
+
+            // Fixed ridership assignment (prevents NaN bug calculation errors!)
+            const assignedBaseRidership = Math.floor(Math.random() * 15000) + 5000;
+
+            const newStation = {
+                id: 'S' + Date.now() + Math.floor(Math.random() * 100),
+                name: finalName,
+                x: x,
+                y: y,
+                level: 1,
+                connectedLines: [],
+                currentRidership: assignedBaseRidership,
+                isHotspot: isHotspotLinked,
+                hotspotType: hotspotType,
+                
+                // Detailed Upgrades Model
+                upgrades: {
+                    capacity: 1, // Max platform load limit (Capacity = lvl * 200,000)
+                    lineCap: 2,   // Max unique lines allowed to cross here
+                    transfer: 1, // Switchover transfer delay multiplier (1 = 100%, 2 = 75%, 3 = 50%, etc.)
+                    speed: 1     // Speed multiplier for departing trains
+                },
+
+                // Real-time metrics and statistics
+                stats: {
+                    passengersLifetime: 0,
+                    revenueLifetime: 0,
+                    peakHourVolume: 0
+                }
+            };
+
+            stations.push(newStation);
+            return newStation;
+        }
+
+        function connectTrack(s1, s2, lineId) {
+            if (s1.id === s2.id) return;
+            
+            // Limit checking for platform line intersection thresholds
+            if (s1.connectedLines.length >= s1.upgrades.lineCap && !s1.connectedLines.includes(lineId)) {
+                displayToast("Line Limit Exceeded", `${s1.name} can only support ${s1.upgrades.lineCap} lines. Upgrade "Line Interchange" first.`, "warn");
+                return;
+            }
+            if (s2.connectedLines.length >= s2.upgrades.lineCap && !s2.connectedLines.includes(lineId)) {
+                displayToast("Line Limit Exceeded", `${s2.name} can only support ${s2.upgrades.lineCap} lines. Upgrade "Line Interchange" first.`, "warn");
+                return;
+            }
+
+            const duplicate = trackSegments.some(track => 
+                track.lineId === lineId && (
+                    (track.s1.id === s1.id && track.s2.id === s2.id) ||
+                    (track.s1.id === s2.id && track.s2.id === s1.id)
+                )
+            );
+
+            if (duplicate) {
+                displayToast("Route Connection Error", "This line track connection already exists!", "warn");
+                return;
+            }
+
+            const lengthKm = parseFloat((distance(s1.x, s1.y, s2.x, s2.y) / 50).toFixed(2));
+            const cost = lengthKm * 0.08; 
+
+            if (gameMode === 'career' && budget < cost) {
+                displayToast("Construction Failure", `Insufficient funds! Costs $${cost.toFixed(2)}bn.`, "error");
+                return;
+            }
+
+            if (gameMode === 'career') budget -= cost;
+
+            const trackSegment = {
+                id: 'TRK' + Date.now() + Math.floor(Math.random() * 100),
+                s1: s1,
+                s2: s2,
+                lengthKm: lengthKm,
+                lineId: lineId
+            };
+
+            trackSegments.push(trackSegment);
+            
+            if (!s1.connectedLines.includes(lineId)) s1.connectedLines.push(lineId);
+            if (!s2.connectedLines.includes(lineId)) s2.connectedLines.push(lineId);
+
+            triggerLayTrackSound();
+            displayToast("Route Installed", `Connected ${s1.name} to ${s2.name}. Length: ${lengthKm}km.`, "success");
+            
+            updateHUD();
+            updateCustomLinesList();
+            spawnTrainOnLine(lineId);
+        }
+
+        // Dynamically seeds hotspots procedurally with major/minor categorization
+        function setupMapSimulation(hotspotDensity = 'standard') {
+            stations = [];
+            trackSegments = [];
+            activeTrains = [];
+            hotspots = [];
+
+            // Reset camera to map center
+            camera.x = MAP_SIZE / 2;
+            camera.y = MAP_SIZE / 2;
+
+            // Density bounds
+            let majorCount = 8;
+            let minorCount = 6;
+            if (hotspotDensity === 'dense') {
+                majorCount = 10;
+                minorCount = 10;
+            } else if (hotspotDensity === 'sprawling') {
+                majorCount = 12;
+                minorCount = 15;
+            }
+
+            const majors = HOTSPOTS_POOL.filter(h => h.tier === 'major');
+            const minors = HOTSPOTS_POOL.filter(h => h.tier === 'minor');
+
+            // Generate procedurally distributed Major Hotspots
+            for (let i = 0; i < majorCount; i++) {
+                const template = majors[i % majors.length];
+                // Distribute evenly but randomly across bounds
+                const hX = Math.random() * (MAP_SIZE - 400) + 200;
+                const hY = Math.random() * (MAP_SIZE - 400) + 200;
+
+                const hotspot = { 
+                    name: `${template.name} ${String.fromCharCode(65 + Math.floor(i / majors.length))}`, 
+                    type: template.type, 
+                    multiplier: template.multiplier, 
+                    desc: template.desc, 
+                    tier: 'major',
+                    x: hX, 
+                    y: hY, 
+                    pulse: Math.random() * Math.PI 
+                };
+                hotspots.push(hotspot);
+                generateStation(hX, hY, hotspot.name, true, hotspot.type);
+            }
+
+            // Generate procedurally distributed Minor Hotspots
+            for (let j = 0; j < minorCount; j++) {
+                const template = minors[j % minors.length];
+                const hX = Math.random() * (MAP_SIZE - 400) + 200;
+                const hY = Math.random() * (MAP_SIZE - 400) + 200;
+
+                const hotspot = { 
+                    name: `${template.name} ${j + 1}`, 
+                    type: template.type, 
+                    multiplier: template.multiplier, 
+                    desc: template.desc, 
+                    tier: 'minor',
+                    x: hX, 
+                    y: hY, 
+                    pulse: Math.random() * Math.PI 
+                };
+                hotspots.push(hotspot);
+                generateStation(hX, hY, hotspot.name, true, hotspot.type);
+            }
+
+            // Place 4 random unlinked minor community terminals
+            for (let k = 0; k < 4; k++) {
+                const hX = Math.random() * (MAP_SIZE - 500) + 250;
+                const hY = Math.random() * (MAP_SIZE - 500) + 250;
+                generateStation(hX, hY);
+            }
+
+            if (customLines.length > 0) activeLineId = customLines[0].id;
+
+            updateHUD();
+            updateCustomLinesList();
+            updateNetworkStats();
+        }
+
+        function spawnTrainOnLine(lineId) {
+            const lineTracks = trackSegments.filter(t => t.lineId === lineId);
+            if (lineTracks.length === 0) return;
+
+            const existingTrainsOnLine = activeTrains.filter(t => t.lineId === lineId);
+            const line = customLines.find(l => l.id === lineId);
+            const maxAllowed = line ? line.trainsCount : 1;
+
+            if (existingTrainsOnLine.length < maxAllowed) {
+                const startTrack = lineTracks[0];
+                activeTrains.push({
+                    id: 'TRN' + Date.now() + Math.floor(Math.random() * 100),
+                    lineId: lineId,
+                    trackId: startTrack.id,
+                    segmentIndex: 0,
+                    progress: 0, 
+                    direction: 1, 
+                    passengersCount: Math.floor(Math.random() * 120) + 40,
+                    maxPassengers: 350
+                });
+            }
+        }
+
+        function updateTrainPhysics() {
+            activeTrains.forEach(train => {
+                const lineTracks = trackSegments.filter(t => t.lineId === train.lineId);
+                if (lineTracks.length === 0) {
+                    activeTrains = activeTrains.filter(t => t.id !== train.id);
+                    return;
+                }
+
+                if (train.segmentIndex >= lineTracks.length) {
+                    train.segmentIndex = 0;
+                    train.progress = 0;
+                }
+
+                const track = lineTracks[train.segmentIndex];
+                let currentStationBoost = 1.0;
+                if (track) {
+                    // Pull speed booster factor from starting station
+                    currentStationBoost = 1.0 + (track.s1.upgrades.speed - 1) * 0.3;
+                }
+
+                const speed = 0.005 * currentStationBoost; 
+                train.progress += speed * train.direction;
+
+                if (train.progress >= 1) {
+                    train.progress = 0;
+                    train.segmentIndex += 1;
+                    
+                    if (train.segmentIndex >= lineTracks.length) {
+                        train.direction = -1;
+                        train.segmentIndex = lineTracks.length - 1;
+                        train.progress = 1;
+                    }
+                } else if (train.progress <= 0 && train.direction === -1) {
+                    train.progress = 1;
+                    train.segmentIndex -= 1;
+
+                    if (train.segmentIndex < 0) {
+                        train.direction = 1;
+                        train.segmentIndex = 0;
+                        train.progress = 0;
+                    }
+                }
+            });
+        }
+
+        function tickClock() {
+            timeClock.ticks += timeClock.speed;
+            
+            // Speed optimized: 15 ticks advances 10 game-minutes (Time is 4x faster!)
+            if (timeClock.ticks >= 15) {
+                timeClock.ticks = 0;
+                timeClock.minute += 10;
+                if (timeClock.minute >= 60) {
+                    timeClock.minute = 0;
+                    timeClock.hour++;
+                    
+                    // Live Audit update is calculated hourly instead of daily!
+                    calculatePassiveRevenue();
+                    
+                    if (timeClock.hour >= 24) {
+                        timeClock.hour = 0;
+                        timeClock.dayIndex = (timeClock.dayIndex + 1) % 7;
+                        
+                        // Weekly allocation digest
+                        if (timeClock.dayIndex === 0) {
+                            triggerWeeklyRewardAllocation();
+                        }
+                    }
+                }
+                document.getElementById('clock-display').textContent = `${timeClock.days[timeClock.dayIndex]} ${String(timeClock.hour).padStart(2, '0')}:${String(timeClock.minute).padStart(2, '0')} ${timeClock.hour >= 12 ? 'PM' : 'AM'}`;
+            }
+        }
+
+        function calculatePassiveRevenue() {
+            let totalRevenueThisHour = 0.00;
+            let totalRidershipThisHour = 0;
+
+            stations.forEach(station => {
+                if (station.connectedLines.length === 0) return;
+
+                // Base ridership calculation modified by platform capacity level and upgrades
+                // Scaled to hourly updates (divided by 24 for daily baseline)
+                let baseLoad = (station.currentRidership * 0.12) / 24; 
+
+                if (station.isHotspot) {
+                    const matchedHotspot = hotspots.find(h => h.name === station.name || (h.type === station.hotspotType && distance(h.x, h.y, station.x, station.y) < 10));
+                    if (matchedHotspot) baseLoad *= matchedHotspot.multiplier;
+                }
+
+                // Station specific upgrade boosts
+                baseLoad *= (1 + (station.upgrades.capacity - 1) * 0.35);
+                baseLoad *= (1 + (station.upgrades.transfer - 1) * 0.25);
+                baseLoad *= (1 + (station.connectedLines.length - 1) * 0.25);
+
+                const ridershipCount = Math.floor(baseLoad);
+                const avgPrice = 2.75;
+                const hourlyIncome = (ridershipCount * avgPrice) / 1000000000; 
+                
+                totalRevenueThisHour += hourlyIncome;
+                totalRidershipThisHour += ridershipCount;
+
+                // Update Station Statistics (No NaN!)
+                station.stats.passengersLifetime += ridershipCount;
+                station.stats.revenueLifetime += hourlyIncome;
+                station.stats.peakHourVolume = Math.max(station.stats.peakHourVolume, Math.floor(ridershipCount * 1.5));
+            });
+
+            revenue = totalRevenueThisHour * 30 * 24; // Standardized monthly scaling projection
+
+            if (gameMode === 'career' && budget !== 'infinite') {
+                budget += totalRevenueThisHour;
+            }
+
+            if (totalRevenueThisHour > 0) {
+                triggerCashSound();
+            }
+
+            updateHUD();
+            updateNetworkStats();
+            
+            // Keep inspector live stats updated dynamically!
+            if (selectedNodeForInspector) {
+                inspectNode(selectedNodeForInspector);
+            }
+        }
+
+        function renderMap() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const style = STYLES[selectedTheme];
+            
+            // Screen dimensions
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+
+            // Fill viewport background
+            ctx.fillStyle = style.bg;
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            // Apply camera transform to context
+            ctx.translate(width / 2, height / 2);
+            ctx.scale(camera.zoom, camera.zoom);
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw grid lines inside virtual space boundaries
+            ctx.strokeStyle = style.grid;
+            ctx.lineWidth = 1;
+            const gridInterval = 100;
+            for (let i = 0; i <= MAP_SIZE; i += gridInterval) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, MAP_SIZE);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(MAP_SIZE, i);
+                ctx.stroke();
+            }
+
+            // Draw outer map boundary limits
+            ctx.strokeStyle = style.glow ? '#6366f1' : '#1e293b';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+            // OPTIMIZATION: Camera Frustum Culling limits (skip rendering out of screen views)
+            const margin = 100;
+            const leftLimit = camera.x - (width / 2) / camera.zoom - margin;
+            const rightLimit = camera.x + (width / 2) / camera.zoom + margin;
+            const topLimit = camera.y - (height / 2) / camera.zoom - margin;
+            const bottomLimit = camera.y + (height / 2) / camera.zoom + margin;
+
+            // Draw Hotspots (Tiered: Major vs Minor)
+            hotspots.forEach(hotspot => {
+                if (hotspot.x < leftLimit || hotspot.x > rightLimit || hotspot.y < topLimit || hotspot.y > bottomLimit) return;
+
+                hotspot.pulse += 0.05;
+                
+                // Tiered sizing
+                const radiusPulse = hotspot.tier === 'major' 
+                    ? 60 + Math.sin(hotspot.pulse) * 10 
+                    : 35 + Math.sin(hotspot.pulse) * 6;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(hotspot.x, hotspot.y, radiusPulse, 0, Math.PI * 2);
+                
+                if (hotspot.tier === 'major') {
+                    ctx.fillStyle = style.glow ? 'rgba(99, 102, 241, 0.07)' : 'rgba(99, 102, 241, 0.04)';
+                    ctx.strokeStyle = style.glow ? 'rgba(99, 102, 241, 0.3)' : 'rgba(99, 102, 241, 0.15)';
+                } else {
+                    ctx.fillStyle = 'rgba(236, 72, 153, 0.05)';
+                    ctx.strokeStyle = 'rgba(236, 72, 153, 0.2)';
+                }
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 6]);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.save();
+                ctx.fillStyle = hotspot.tier === 'major' ? '#6366f1' : '#ec4899';
+                ctx.font = `bold 9px ${style.font}`;
+                const prefix = hotspot.tier === 'major' ? '👑 MAJOR:' : '📍 LOCAL:';
+                ctx.fillText(`${prefix} ${hotspot.type.toUpperCase()}`, hotspot.x - 25, hotspot.y - style.stationRadius - 12);
+                ctx.restore();
+            });
+
+            // Draw tracks
+            const trackGroups = {};
+            trackSegments.forEach(track => {
+                const key = [track.s1.id, track.s2.id].sort().join('-');
+                if (!trackGroups[key]) trackGroups[key] = [];
+                trackGroups[key].push(track);
+            });
+
+            Object.keys(trackGroups).forEach(key => {
+                const group = trackGroups[key];
+                const count = group.length;
+
+                group.forEach((track, index) => {
+                    // Frustum Culled Tracks
+                    if (Math.min(track.s1.x, track.s2.x) > rightLimit || Math.max(track.s1.x, track.s2.x) < leftLimit ||
+                        Math.min(track.s1.y, track.s2.y) > bottomLimit || Math.max(track.s1.y, track.s2.y) < topLimit) return;
+
+                    const line = customLines.find(l => l.id === track.lineId);
+                    if (!line) return;
+
+                    ctx.save();
+                    ctx.strokeStyle = line.color;
+                    ctx.lineWidth = style.lineWidth;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    if (style.glow) {
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = line.color;
+                    }
+
+                    let offsetX = 0;
+                    let offsetY = 0;
+                    if (count > 1) {
+                        const angle = Math.atan2(track.s2.y - track.s1.y, track.s2.x - track.s1.x);
+                        const normalAngle = angle + Math.PI / 2;
+                        const spacing = style.lineWidth + 2;
+                        const shift = (index - (count - 1) / 2) * spacing;
+                        offsetX = Math.cos(normalAngle) * shift;
+                        offsetY = Math.sin(normalAngle) * shift;
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(track.s1.x + offsetX, track.s1.y + offsetY);
+                    ctx.lineTo(track.s2.x + offsetX, track.s2.y + offsetY);
+                    ctx.stroke();
+                    ctx.restore();
+                });
+            });
+
+            // Blueprint path preview dragging
+            if (isDraggingTrack && dragStartStation) {
+                ctx.save();
+                const activeLine = customLines.find(l => l.id === activeLineId);
+                ctx.strokeStyle = activeLine ? activeLine.color : '#818cf8';
+                ctx.lineWidth = style.lineWidth;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(dragStartStation.x, dragStartStation.y);
+                ctx.lineTo(dragCurrentPos.x, dragCurrentPos.y);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Draw active rolling fleet
+            activeTrains.forEach(train => {
+                const line = customLines.find(l => l.id === train.lineId);
+                const lineTracks = trackSegments.filter(t => t.lineId === train.lineId);
+                if (!line || lineTracks.length === 0) return;
+
+                const track = lineTracks[train.segmentIndex];
+                if (!track) return;
+
+                const tx = track.s1.x + (track.s2.x - track.s1.x) * train.progress;
+                const ty = track.s1.y + (track.s2.y - track.s1.y) * train.progress;
+
+                // Frustum Culled Trains
+                if (tx < leftLimit || tx > rightLimit || ty < topLimit || ty > bottomLimit) return;
+
+                const angle = Math.atan2(track.s2.y - track.s1.y, track.s2.x - track.s1.x);
+
+                ctx.save();
+                ctx.translate(tx, ty);
+                ctx.rotate(angle);
+
+                ctx.fillStyle = style.trainFill;
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.roundRect(-14, -6, 28, 12, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 7px sans-serif';
+                ctx.fillText(line.name.charAt(0), -3, 3);
+
+                ctx.restore();
+            });
+
+            // Draw station platforms
+            stations.forEach(station => {
+                if (station.x < leftLimit || station.x > rightLimit || station.y < topLimit || station.y > bottomLimit) return;
+
+                const outerRadius = style.stationRadius + (station.level - 1) * 2;
+
+                ctx.save();
+                if (style.glow) {
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = style.stationOutline;
+                }
+
+                ctx.fillStyle = style.stationFill;
+                ctx.strokeStyle = style.stationOutline;
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.arc(station.x, station.y, outerRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                if (selectedTheme === 'nyc') {
+                    ctx.fillStyle = style.stationSymbolColor;
+                    ctx.beginPath();
+                    ctx.arc(station.x, station.y, outerRadius * 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `bold 9px ${style.font}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(station.name.charAt(0), station.x, station.y);
+                } else if (selectedTheme === 'london') {
+                    ctx.strokeStyle = '#1e3a8a';
+                    ctx.lineWidth = 3.5;
+                    ctx.beginPath();
+                    ctx.arc(station.x, station.y, outerRadius * 0.7, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(station.x - outerRadius * 0.9, station.y - 3, outerRadius * 1.8, 6);
+                } else if (selectedTheme === 'tokyo') {
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(station.x, station.y, outerRadius * 0.6, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (selectedTheme === 'neon') {
+                    ctx.fillStyle = '#10b981';
+                    ctx.beginPath();
+                    ctx.arc(station.x, station.y, outerRadius * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+
+                ctx.save();
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = `bold 10px ${style.font}`;
+                ctx.textAlign = 'center';
+                ctx.fillText(station.name, station.x, station.y + outerRadius + 14);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = `8px ${style.font}`;
+                ctx.fillText(`${(station.currentRidership / 1000).toFixed(1)}k/mo`, station.x, station.y + outerRadius + 24);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        // Setup input controllers with multi-finger drag & camera zoom support
+        function setupInputController() {
+            let isHoldingMouse = false;
+            let lastTouchDist = 0;
+
+            const getCursorPosition = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.touches ? e.touches[0].clientX : e.clientX;
+                const y = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: x - rect.left,
+                    y: y - rect.top
+                };
+            };
+
+            const dragStart = (e) => {
+                initAudioEngine(); 
+                isHoldingMouse = true;
+                
+                // Pinch-to-zoom initiator for Mobile Device viewports
+                if (e.touches && e.touches.length === 2) {
+                    isPanning = false;
+                    isDraggingTrack = false;
+                    lastTouchDist = distance(
+                        e.touches[0].clientX, e.touches[0].clientY,
+                        e.touches[1].clientX, e.touches[1].clientY
+                    );
+                    return;
+                }
+
+                const pos = getCursorPosition(e);
+                const worldPos = screenToWorld(pos.x, pos.y);
+                const stationClicked = getStationAtPosition(worldPos.x, worldPos.y);
+
+                if (activeTool === 'station') {
+                    const cost = 0.45; 
+                    if (gameMode === 'career' && budget !== 'infinite' && budget < cost) {
+                        displayToast("Insufficient Capital", "Need $0.45bn to build a subway terminal station", "error");
+                        return;
+                    }
+                    if (stations.some(s => distance(s.x, s.y, worldPos.x, worldPos.y) < 70)) {
+                        displayToast("Zoning Conflict", "Too close to existing subway platforms!", "warn");
+                        return;
+                    }
+
+                    if (gameMode === 'career' && budget !== 'infinite') budget -= cost;
+
+                    generateStation(worldPos.x, worldPos.y);
+                    displayToast("Terminal Constructed", "Established brand new terminal on the grid.", "success");
+                    triggerUpgradeSound();
+                    updateHUD();
+                } 
+                else if (activeTool === 'track') {
+                    if (stationClicked) {
+                        isDraggingTrack = true;
+                        dragStartStation = stationClicked;
+                        dragCurrentPos = { x: stationClicked.x, y: stationClicked.y };
+                    } else {
+                        isPanning = true;
+                        panStart = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
+                        cameraStart = { x: camera.x, y: camera.y };
+                    }
+                }
+                else if (activeTool === 'upgrade') {
+                    if (stationClicked) {
+                        inspectNode(stationClicked);
+                    } else {
+                        isPanning = true;
+                        panStart = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
+                        cameraStart = { x: camera.x, y: camera.y };
+                    }
+                }
+                else if (activeTool === 'demolish') {
+                    if (stationClicked) {
+                        stations = stations.filter(s => s.id !== stationClicked.id);
+                        trackSegments = trackSegments.filter(t => t.s1.id !== stationClicked.id && t.s2.id !== stationClicked.id);
+                        
+                        if (gameMode === 'career' && budget !== 'infinite') budget += 0.27; 
+
+                        displayToast("Demolition Complete", `Terminal cleared from urban grid. Recouped $0.27bn.`, "warn");
+                        triggerAlertSound();
+                        updateHUD();
+                    } else {
+                        isPanning = true;
+                        panStart = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
+                        cameraStart = { x: camera.x, y: camera.y };
+                    }
+                }
+                else if (activeTool === 'inspect') {
+                    if (stationClicked) {
+                        inspectNode(stationClicked);
+                    } else {
+                        isPanning = true;
+                        panStart = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
+                        cameraStart = { x: camera.x, y: camera.y };
+                        document.getElementById('inspector-panel').classList.add('hidden');
+                        selectedNodeForInspector = null;
+                    }
+                }
+            };
+
+            const dragMove = (e) => {
+                if (e.touches && e.touches.length === 2) {
+                    // Handle responsive pinch zooming gestures
+                    const dist = distance(
+                        e.touches[0].clientX, e.touches[0].clientY,
+                        e.touches[1].clientX, e.touches[1].clientY
+                    );
+                    if (lastTouchDist > 0) {
+                        const factor = dist / lastTouchDist;
+                        camera.zoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, camera.zoom * factor));
+                    }
+                    lastTouchDist = dist;
+                    renderMap();
+                    return;
+                }
+
+                const pos = getCursorPosition(e);
+                
+                if (isHoldingMouse) {
+                    if (isDraggingTrack) {
+                        dragCurrentPos = screenToWorld(pos.x, pos.y);
+                    } else if (isPanning) {
+                        const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+                        const dx = currentX - panStart.x;
+                        const dy = currentY - panStart.y;
+                        
+                        camera.x = cameraStart.x - dx / camera.zoom;
+                        camera.y = cameraStart.y - dy / camera.zoom;
+
+                        // Constraint camera panning limits withinVirtual Grid bounds
+                        camera.x = Math.max(100, Math.min(MAP_SIZE - 100, camera.x));
+                        camera.y = Math.max(100, Math.min(MAP_SIZE - 100, camera.y));
+                    }
+                }
+            };
+
+            const dragEnd = (e) => {
+                isHoldingMouse = false;
+                if (e.touches && e.touches.length < 2) {
+                    lastTouchDist = 0;
+                }
+                if (isDraggingTrack && dragStartStation) {
+                    const pos = getCursorPosition(e);
+                    const worldPos = screenToWorld(pos.x, pos.y);
+                    const endStation = getStationAtPosition(worldPos.x, worldPos.y);
+                    
+                    if (endStation && endStation.id !== dragStartStation.id) {
+                        connectTrack(dragStartStation, endStation, activeLineId);
+                    }
+                }
+                isDraggingTrack = false;
+                isPanning = false;
+                dragStartStation = null;
+            };
+
+            canvas.addEventListener('mousedown', dragStart);
+            canvas.addEventListener('mousemove', dragMove);
+            canvas.addEventListener('mouseup', dragEnd);
+
+            canvas.addEventListener('touchstart', (e) => { dragStart(e); e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => { dragMove(e); e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchend', (e) => { dragEnd(e); e.preventDefault(); }, { passive: false });
+
+            // Scroll wheel desktop support listener
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                initAudioEngine();
+                const zoomFactor = 1.1;
+                if (e.deltaY < 0) {
+                    camera.zoom = Math.min(camera.maxZoom, camera.zoom * zoomFactor);
+                } else {
+                    camera.zoom = Math.max(camera.minZoom, camera.zoom / zoomFactor);
+                }
+                renderMap();
+            }, { passive: false });
+
+            // On-screen Zoom Button Listeners
+            document.getElementById('btn-zoom-in').addEventListener('click', () => {
+                camera.zoom = Math.min(camera.maxZoom, camera.zoom + 0.15);
+            });
+            document.getElementById('btn-zoom-out').addEventListener('click', () => {
+                camera.zoom = Math.max(camera.minZoom, camera.zoom - 0.15);
+            });
+        }
+
+        // Tab Navigators Setup
+        const tabConstructBtn = document.getElementById('tab-construct-btn');
+        const tabLinesBtn = document.getElementById('tab-lines-btn');
+        const tabNetworkBtn = document.getElementById('tab-network-btn');
+
+        const tabConstruct = document.getElementById('tab-construct');
+        const tabLines = document.getElementById('tab-lines');
+        const tabNetwork = document.getElementById('tab-network');
+
+        function switchTab(activeTab, activeBtn) {
+            [tabConstruct, tabLines, tabNetwork].forEach(tab => tab.classList.add('hidden'));
+            [tabConstructBtn, tabLinesBtn, tabNetworkBtn].forEach(btn => {
+                btn.classList.remove('text-indigo-400', 'border-b-2', 'border-indigo-500');
+                btn.classList.add('text-slate-400');
+            });
+
+            activeTab.classList.remove('hidden');
+            activeBtn.classList.add('text-indigo-400', 'border-b-2', 'border-indigo-500');
+            activeBtn.classList.remove('text-slate-400');
+        }
+
+        tabConstructBtn.addEventListener('click', () => switchTab(tabConstruct, tabConstructBtn));
+        tabLinesBtn.addEventListener('click', () => switchTab(tabLines, tabLinesBtn));
+        tabNetworkBtn.addEventListener('click', () => switchTab(tabNetwork, tabNetworkBtn));
+
+        // Tool Selection
+        const toolStationBtn = document.getElementById('tool-station-btn');
+        const toolTrackBtn = document.getElementById('tool-track-btn');
+        const toolUpgradeBtn = document.getElementById('tool-upgrade-btn');
+        const toolDemolishBtn = document.getElementById('tool-demolish-btn');
+
+        const tools = [
+            { btn: toolStationBtn, val: 'station', display: 'Placing Station', desc: 'Click empty area to build platform for $0.45bn' },
+            { btn: toolTrackBtn, val: 'track', display: 'Laying Tracks', desc: 'Drag between stations to link them via tracks' },
+            { btn: toolUpgradeBtn, val: 'upgrade', display: 'Upgrading Platform', desc: 'Click station platforms to open individual upgrade components' },
+            { btn: toolDemolishBtn, val: 'demolish', display: 'Demolishing Sector', desc: 'Click stations to delete them with a 60% partial refund' }
+        ];
+
+        tools.forEach(tool => {
+            tool.btn.addEventListener('click', () => {
+                if (activeTool === tool.val) {
+                    activeTool = 'inspect';
+                    tools.forEach(t => t.btn.classList.remove('border-indigo-500', 'bg-indigo-950/20'));
+                    document.getElementById('active-tool-display').textContent = 'Inspecting Map';
+                } else {
+                    activeTool = tool.val;
+                    tools.forEach(t => t.btn.classList.remove('border-indigo-500', 'bg-indigo-950/20'));
+                    tool.btn.classList.add('border-indigo-500', 'bg-indigo-950/20');
+                    document.getElementById('active-tool-display').textContent = tool.display;
+                }
+            });
+        });
+
+        // Branding Actions
+        document.getElementById('create-line-btn').addEventListener('click', () => {
+            const nameInput = document.getElementById('new-line-name');
+            const colorInput = document.getElementById('new-line-color');
+
+            const name = nameInput.value.trim() || `Line ${customLines.length + 1}`;
+            const color = colorInput.value;
+            const newId = 'L' + (customLines.length + 1);
+
+            customLines.push({
+                id: newId,
+                name: name,
+                color: color,
+                trainsCount: 1,
+                ticketPrice: 2.75
+            });
+
+            // Re-shuffle random line name for the next creation input pre-fill
+            nameInput.value = getRandomLineName();
+            displayToast("Route Established", `Successfully branded the ${name}!`, "success");
+            triggerUpgradeSound();
+            updateCustomLinesList();
+        });
+
+        // Line name shuffler listener
+        document.getElementById('btn-shuffle-line-name').addEventListener('click', () => {
+            document.getElementById('new-line-name').value = getRandomLineName();
+            triggerUpgradeSound();
+        });
+
+        document.getElementById('new-line-color').addEventListener('input', (e) => {
+            document.getElementById('color-hex-label').textContent = e.target.value.toLowerCase();
+        });
+
+        function updateCustomLinesList() {
+            const list = document.getElementById('lines-list-container');
+            list.innerHTML = '';
+
+            customLines.forEach(line => {
+                const isActive = activeLineId === line.id;
+                const activeStyle = isActive ? 'border-indigo-500 bg-indigo-950/20' : 'border-slate-800 bg-slate-950';
+                
+                const lineTracksCount = trackSegments.filter(t => t.lineId === line.id).length;
+                const totalLength = trackSegments.filter(t => t.lineId === line.id).reduce((sum, t) => sum + t.lengthKm, 0).toFixed(1);
+
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl border flex flex-col gap-2 transition-all ${activeStyle}`;
+                item.innerHTML = `
+                    <div class="flex items-center justify-between cursor-pointer" onclick="selectActiveLine('${line.id}')">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${line.color}"></div>
+                            <div>
+                                <h5 class="text-xs font-bold text-white leading-none">${line.name}</h5>
+                                <span class="text-[8px] text-slate-500 uppercase font-bold tracking-wider">${lineTracksCount} links connected • ${totalLength} km</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            ${isActive ? '<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-[8px] font-extrabold uppercase text-indigo-400">Active</span>' : ''}
+                            <!-- Line Deletion Trash Bin -->
+                            <button onclick="event.stopPropagation(); deleteCustomLine('${line.id}')" class="w-6 h-6 rounded bg-red-950/30 border border-red-900/50 flex items-center justify-center text-red-400 hover:bg-red-900/50 hover:text-white transition-all ml-1" title="Delete Line">
+                                <i class="fa-solid fa-trash text-[9px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4 pt-2 border-t border-slate-900">
+                        <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                            <span class="text-[8px] text-slate-400 font-bold uppercase px-1">Fleet</span>
+                            <button onclick="changeTrainsCount('${line.id}', -1)" class="w-5 h-5 rounded bg-slate-950 flex items-center justify-center text-xs text-slate-400 hover:text-white">-</button>
+                            <span class="text-xs font-bold px-1.5 font-mono-custom text-white">${line.trainsCount}</span>
+                            <button onclick="changeTrainsCount('${line.id}', 1)" class="w-5 h-5 rounded bg-slate-950 flex items-center justify-center text-xs text-slate-400 hover:text-white">+</button>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <span class="text-[8px] text-slate-400 uppercase font-bold mr-1">Fare</span>
+                            <input type="number" step="0.10" value="${line.ticketPrice.toFixed(2)}" onchange="updateLineFare('${line.id}', this.value)" class="w-12 bg-slate-900 border border-slate-800 rounded px-1 py-0.5 text-[10px] text-center text-white font-mono-custom focus:outline-none">
+                        </div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        window.selectActiveLine = function(lineId) {
+            activeLineId = lineId;
+            updateCustomLinesList();
+            displayToast("Line Selected", `Ready to layout rails for ${customLines.find(l => l.id === lineId).name}.`, "info");
+        };
+
+        window.deleteCustomLine = function(lineId) {
+            const line = customLines.find(l => l.id === lineId);
+            if (!line) return;
+
+            // Remove associated track segments
+            trackSegments = trackSegments.filter(t => t.lineId !== lineId);
+            
+            // Remove associated rolling trains
+            const trainsCount = activeTrains.filter(t => t.lineId === lineId).length;
+            activeTrains = activeTrains.filter(t => t.lineId !== lineId);
+
+            // Dissolve line brand
+            customLines = customLines.filter(l => l.id !== lineId);
+
+            // Return active line fallback if needed
+            if (activeLineId === lineId && customLines.length > 0) {
+                activeLineId = customLines[0].id;
+            }
+
+            // Scrub connection states on stations
+            stations.forEach(station => {
+                station.connectedLines = station.connectedLines.filter(id => id !== lineId);
+            });
+
+            triggerAlertSound();
+            displayToast("Route Dissolved", `Line brand "${line.name}" completely dissolved. Decommissioned ${trainsCount} trains.`, "warn");
+
+            updateHUD();
+            updateCustomLinesList();
+            updateNetworkStats();
+            renderMap();
+        };
+
+        window.changeTrainsCount = function(lineId, delta) {
+            const line = customLines.find(l => l.id === lineId);
+            if (!line) return;
+
+            const costPerTrain = 0.15; 
+            
+            if (delta > 0) {
+                if (gameMode === 'career' && budget !== 'infinite' && budget < costPerTrain) {
+                    displayToast("Purchase Rejected", "Insufficient funds to procure locomotives.", "error");
+                    return;
+                }
+                if (gameMode === 'career' && budget !== 'infinite') budget -= costPerTrain;
+
+                line.trainsCount += 1;
+                spawnTrainOnLine(lineId);
+                displayToast("Train Added", `Locomotive commissioned to ${line.name}. Costs $0.15bn.`, "success");
+            } else if (delta < 0 && line.trainsCount > 1) {
+                line.trainsCount -= 1;
+                const index = activeTrains.findIndex(t => t.lineId === lineId);
+                if (index !== -1) activeTrains.splice(index, 1);
+
+                if (gameMode === 'career' && budget !== 'infinite') budget += 0.09; 
+                displayToast("Fleet sold", `Locomotive sold. Recouped $0.09bn.`, "warn");
+            }
+
+            updateHUD();
+            updateCustomLinesList();
+        };
+
+        window.updateLineFare = function(lineId, value) {
+            const line = customLines.find(l => l.id === lineId);
+            if (!line) return;
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed) && parsed > 0) {
+                line.ticketPrice = parsed;
+                displayToast("Fare Adjusted", `${line.name} ticket set to $${parsed.toFixed(2)}.`, "info");
+            }
+        };
+
+        function updateNetworkStats() {
+            document.getElementById('stats-stations-count').textContent = stations.length;
+            const totalTrackLength = trackSegments.reduce((sum, t) => sum + t.lengthKm, 0).toFixed(1);
+            document.getElementById('stats-tracks-count').textContent = `${totalTrackLength} km`;
+            document.getElementById('stats-fleet-count').textContent = `${activeTrains.length} trains`;
+
+            const linkedHotspotsCount = stations.filter(s => s.isHotspot && s.connectedLines.length > 0).length;
+            document.getElementById('stats-hotspots-count').textContent = `${linkedHotspotsCount}/${hotspots.length}`;
+
+            const trackerList = document.getElementById('hotspot-status-list');
+            trackerList.innerHTML = '';
+
+            hotspots.forEach(hotspot => {
+                const linkedStation = stations.find(s => s.isHotspot && s.name === hotspot.name);
+                const isConnected = linkedStation && linkedStation.connectedLines.length > 0;
+                
+                const statusBadge = isConnected 
+                    ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-[8px] font-bold text-emerald-400 uppercase tracking-wider">Connected</span>' 
+                    : '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-[8px] font-bold text-amber-400 uppercase tracking-wider">Unconnected</span>';
+
+                const tierBadge = hotspot.tier === 'major' 
+                    ? '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-[8px] font-bold text-indigo-400 uppercase tracking-wider">Major</span>' 
+                    : '<span class="px-1.5 py-0.5 rounded bg-pink-500/20 text-[8px] font-bold text-pink-400 uppercase tracking-wider">Minor</span>';
+
+                const card = document.createElement('div');
+                card.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h5 class="text-xs font-bold text-white leading-none">${hotspot.name}</h5>
+                            <div class="flex gap-1">${statusBadge}${tierBadge}</div>
+                        </div>
+                        <p class="text-[9px] text-slate-500 mt-1">${hotspot.desc} • ${hotspot.multiplier}x multiplier</p>
+                    </div>
+                `;
+                trackerList.appendChild(card);
+            });
+        }
+
+        function inspectNode(station) {
+            selectedNodeForInspector = station;
+            const panel = document.getElementById('inspector-panel');
+            const content = document.getElementById('inspector-content');
+
+            panel.classList.remove('hidden');
+
+            const lineNames = station.connectedLines.map(id => {
+                const line = customLines.find(l => l.id === id);
+                return line ? `<span class="px-2 py-0.5 rounded text-[8px] font-bold text-white uppercase" style="background-color: ${line.color}">${line.name}</span>` : '';
+            }).join(' ');
+
+            const capacityValue = station.upgrades.capacity * 200000;
+            const currentCongestion = Math.min(100, Math.floor((station.currentRidership / capacityValue) * 100));
+
+            // Upgrade costs scale dynamically per upgrade type
+            const costCap = 0.25 * station.upgrades.capacity;
+            const costLine = 0.50 * (station.upgrades.lineCap - 1);
+            const costTransfer = 0.35 * station.upgrades.transfer;
+            const costSpeed = 0.40 * station.upgrades.speed;
+
+            content.innerHTML = `
+                <!-- Custom Station Name and General Statistics -->
+                <div class="flex flex-col gap-1 pb-2 border-b border-slate-900">
+                    <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Platform Custom Branding</span>
+                    <input type="text" value="${station.name}" onchange="renameStation('${station.id}', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-white font-bold focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- Core Live Statistics Section -->
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-850 space-y-2">
+                    <span class="text-[8px] text-indigo-400 font-bold uppercase tracking-wider block">Live Platform Audit</span>
+                    <div class="grid grid-cols-2 gap-2 text-[10px]">
+                        <div>
+                            <span class="text-slate-500 block">Total Riders Serviced:</span>
+                            <span class="font-bold text-white">${station.stats.passengersLifetime.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Total Profits Generated:</span>
+                            <span class="font-bold text-emerald-400 font-mono-custom">$${station.stats.revenueLifetime.toFixed(4)}bn</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Peak Demand Hour:</span>
+                            <span class="font-bold text-white">${station.stats.peakHourVolume.toLocaleString()}/hr</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Network Intersection:</span>
+                            <span class="font-bold text-white">${station.connectedLines.length} / ${station.upgrades.lineCap} Lines</span>
+                        </div>
+                    </div>
+
+                    <!-- Platform Congestion Bar -->
+                    <div class="space-y-1 pt-1">
+                        <div class="flex justify-between text-[8px] font-bold uppercase text-slate-400">
+                            <span>Congestion Load Index</span>
+                            <span class="${currentCongestion > 75 ? 'text-red-400 animate-pulse' : 'text-slate-400'}">${currentCongestion}%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 transition-all duration-300" style="width: ${currentCongestion}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Integration Upgrades -->
+                <div class="space-y-2">
+                    <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider block">Platform Infrastructure Upgrades</span>
+                    
+                    <div class="grid grid-cols-1 gap-2">
+                        <!-- Upgrade: Platform Capacity -->
+                        <div class="p-2 bg-slate-900 border border-slate-850 rounded-lg flex justify-between items-center">
+                            <div>
+                                <h6 class="text-[10px] font-bold text-white leading-none">Platform Capacity (Lvl ${station.upgrades.capacity})</h6>
+                                <p class="text-[8px] text-slate-400 mt-0.5">Increases platform capacity to ${capacityValue.toLocaleString()} commuters.</p>
+                            </div>
+                            <button onclick="purchaseUpgrade('${station.id}', 'capacity', ${costCap})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
+                                <span>UPGRADE</span>
+                                <span class="text-[8px] text-emerald-400">+$${costCap.toFixed(2)}bn</span>
+                            </button>
+                        </div>
+
+                        <!-- Upgrade: Line Capacity -->
+                        <div class="p-2 bg-slate-900 border border-slate-850 rounded-lg flex justify-between items-center">
+                            <div>
+                                <h6 class="text-[10px] font-bold text-white leading-none">Line Interchange limit (Lvl ${station.upgrades.lineCap})</h6>
+                                <p class="text-[8px] text-slate-400 mt-0.5">Allows up to ${station.upgrades.lineCap} different lines to intersect here.</p>
+                            </div>
+                            <button onclick="purchaseUpgrade('${station.id}', 'lineCap', ${costLine})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
+                                <span>UPGRADE</span>
+                                <span class="text-[8px] text-emerald-400">+$${costLine.toFixed(2)}bn</span>
+                            </button>
+                        </div>
+
+                        <!-- Upgrade: Switchover Transfer -->
+                        <div class="p-2 bg-slate-900 border border-slate-850 rounded-lg flex justify-between items-center">
+                            <div>
+                                <h6 class="text-[10px] font-bold text-white leading-none">Interchange Transfer Speed (Lvl ${station.upgrades.transfer})</h6>
+                                <p class="text-[8px] text-slate-400 mt-0.5">Reduces delay during lines transfers by ${(100 - (100 / station.upgrades.transfer)).toFixed(0)}%.</p>
+                            </div>
+                            <button onclick="purchaseUpgrade('${station.id}', 'transfer', ${costTransfer})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
+                                <span>UPGRADE</span>
+                                <span class="text-[8px] text-emerald-400">+$${costTransfer.toFixed(2)}bn</span>
+                            </button>
+                        </div>
+
+                        <!-- Upgrade: Track Booster Speed -->
+                        <div class="p-2 bg-slate-900 border border-slate-850 rounded-lg flex justify-between items-center">
+                            <div>
+                                <h6 class="text-[10px] font-bold text-white leading-none">Departing Speed Boost (Lvl ${station.upgrades.speed})</h6>
+                                <p class="text-[8px] text-slate-400 mt-0.5">Increases departing speed of trains by ${(station.upgrades.speed * 30 - 30).toFixed(0)}%.</p>
+                            </div>
+                            <button onclick="purchaseUpgrade('${station.id}', 'speed', ${costSpeed})" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-extrabold font-mono-custom text-white flex flex-col items-center">
+                                <span>UPGRADE</span>
+                                <span class="text-[8px] text-emerald-400">+$${costSpeed.toFixed(2)}bn</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connecting Services summary -->
+                <div class="space-y-1">
+                    <span class="text-[8px] text-slate-500 font-bold uppercase block">Connecting Services</span>
+                    <div class="flex flex-wrap gap-1 mt-1">${lineNames || '<span class="text-[9px] text-slate-500 italic">No lines routed here yet</span>'}</div>
+                </div>
+            `;
+        }
+
+        window.purchaseUpgrade = function(stationId, upgradeType, cost) {
+            const station = stations.find(s => s.id === stationId);
+            if (!station) return;
+
+            if (gameMode === 'career' && budget !== 'infinite' && budget < cost) {
+                displayToast("Upgrade Declined", "Insufficient funds in your capital budget.", "error");
+                return;
+            }
+
+            if (gameMode === 'career' && budget !== 'infinite') budget -= cost;
+
+            station.upgrades[upgradeType] += 1;
+            triggerUpgradeSound();
+            displayToast("Infrastructure Upgraded", `Successfully leveled up ${upgradeType} infrastructure component!`, "success");
+
+            updateHUD();
+            inspectNode(station);
+            renderMap();
+        };
+
+        window.renameStation = function(stationId, newName) {
+            const station = stations.find(s => s.id === stationId);
+            if (station && newName.trim()) {
+                station.name = newName.trim();
+                displayToast("Station Renamed", `Set to: ${station.name}`, "info");
+                renderMap();
+            }
+        };
+
+        document.getElementById('inspector-close-btn').addEventListener('click', () => {
+            document.getElementById('inspector-panel').classList.add('hidden');
+            selectedNodeForInspector = null;
+        });
+
+        document.getElementById('global-theme-select').addEventListener('change', (e) => {
+            selectedTheme = e.target.value;
+            displayToast("Theme Profile Changed", `Active layout style: ${e.target.options[e.target.selectedIndex].text}`, "info");
+            renderMap();
+        });
+
+        // Speed controllers
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            timeClock.speed = 0;
+            updateSpeedButtons();
+        });
+        document.getElementById('btn-speed-1').addEventListener('click', () => {
+            timeClock.speed = 1;
+            updateSpeedButtons();
+        });
+        document.getElementById('btn-speed-2').addEventListener('click', () => {
+            timeClock.speed = 2;
+            updateSpeedButtons();
+        });
+
+        function updateSpeedButtons() {
+            document.getElementById('btn-pause').className = `w-6 h-6 rounded flex items-center justify-center transition-colors ${timeClock.speed === 0 ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white'}`;
+            document.getElementById('btn-speed-1').className = `w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${timeClock.speed === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`;
+            document.getElementById('btn-speed-2').className = `w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${timeClock.speed === 2 ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`;
+        }
+
+        const careerBtn = document.getElementById('mode-career-btn');
+        const sandboxBtn = document.getElementById('mode-sandbox-btn');
+
+        careerBtn.addEventListener('click', () => {
+            gameMode = 'career';
+            budget = 15.0; 
+            careerBtn.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 text-white transition-all";
+            sandboxBtn.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+            document.getElementById('mode-badge').textContent = "Career Mode";
+            document.getElementById('mode-badge').className = "px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 font-bold uppercase text-[8px] text-indigo-400 tracking-wider";
+            updateHUD();
+            displayToast("Career Mode Activated", "Budget constraints enabled ($15.0bn limit).", "info");
+        });
+
+        sandboxBtn.addEventListener('click', () => {
+            gameMode = 'sandbox';
+            budget = 'infinite';
+            sandboxBtn.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 text-white transition-all";
+            careerBtn.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+            document.getElementById('mode-badge').textContent = "Sandbox Mode";
+            document.getElementById('mode-badge').className = "px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 font-bold uppercase text-[8px] text-amber-400 tracking-wider";
+            updateHUD();
+            displayToast("Sandbox Mode Activated", "Unlimited capital budget enabled.", "info");
+        });
+
+        // Modal triggers
+        const settingsBtn = document.getElementById('btn-map-settings');
+        const generatorModal = document.getElementById('generator-modal');
+        const closeGeneratorBtn = document.getElementById('btn-close-generator');
+        const confirmGenerateBtn = document.getElementById('btn-confirm-generate');
+        const sizeInput = document.getElementById('input-map-size');
+        const sizeLabel = document.getElementById('label-bounds-size');
+
+        settingsBtn.addEventListener('click', () => {
+            timeClock.speed = 0; // Pause
+            updateSpeedButtons();
+            generatorModal.classList.remove('hidden');
+        });
+
+        closeGeneratorBtn.addEventListener('click', () => {
+            generatorModal.classList.add('hidden');
+            timeClock.speed = 1; // Play
+            updateSpeedButtons();
+        });
+
+        sizeInput.addEventListener('input', (e) => {
+            const formatted = Number(e.target.value).toLocaleString();
+            sizeLabel.textContent = `${formatted} x ${formatted}`;
+        });
+
+        confirmGenerateBtn.addEventListener('click', () => {
+            const chosenSize = parseInt(sizeInput.value);
+            const chosenDensity = document.getElementById('select-hotspot-density').value;
+            const chosenCash = document.getElementById('select-starting-cash').value;
+
+            // Set state based on generator parameters chosen
+            MAP_SIZE = chosenSize;
+            if (chosenCash === 'infinite') {
+                gameMode = 'sandbox';
+                budget = 'infinite';
+                sandboxBtn.click();
+            } else {
+                gameMode = 'career';
+                budget = parseFloat(chosenCash);
+                careerBtn.click();
+            }
+
+            // Close modal & run map simulation
+            generatorModal.classList.add('hidden');
+            timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1 };
+            
+            setupMapSimulation(chosenDensity);
+            updateSpeedButtons();
+            updateHUD();
+            displayToast("World Seeded Successfully", `Virtual grid expanded to ${chosenSize.toLocaleString()}px.`, "success");
+        });
+
+        function updateHUD() {
+            if (budget === 'infinite') {
+                document.getElementById('budget-display').textContent = "$Infinite";
+            } else {
+                document.getElementById('budget-display').textContent = `$${budget.toFixed(2)}bn`;
+            }
+
+            document.getElementById('revenue-display').textContent = `+$${revenue.toFixed(3)}bn/mo`;
+            let totalPass = stations.reduce((sum, s) => sum + s.currentRidership, 0);
+            document.getElementById('ridership-display').textContent = `${(totalPass/1000).toFixed(1)}k/mo`;
+
+            const activeCount = activeTrains.length;
+            const lineTrainsTotal = customLines.reduce((sum, l) => sum + l.trainsCount, 0);
+            document.getElementById('trains-active-count').textContent = `${activeCount}/${lineTrainsTotal} active`;
+        }
+
+        // Weekly Reward allocations
+        function triggerWeeklyRewardAllocation() {
+            timeClock.speed = 0; 
+            updateSpeedButtons();
+            document.getElementById('weekly-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('reward-train').addEventListener('click', () => {
+            if (customLines.length > 0) {
+                customLines[0].trainsCount += 1;
+                spawnTrainOnLine(customLines[0].id);
+            }
+            document.getElementById('weekly-modal').classList.add('hidden');
+            timeClock.speed = 1; 
+            updateSpeedButtons();
+            updateHUD();
+            displayToast("Reward Assigned", "Bonus Locomotive integrated successfully.", "success");
+        });
+
+        document.getElementById('reward-cash').addEventListener('click', () => {
+            if (budget !== 'infinite') {
+                budget += 1.0; 
+            }
+            document.getElementById('weekly-modal').classList.add('hidden');
+            timeClock.speed = 1; 
+            updateSpeedButtons();
+            updateHUD();
+            displayToast("Reward Assigned", "Municipal capital expansion budget paid.", "success");
+        });
+
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            document.getElementById('tutorial-modal').classList.add('hidden');
+            initAudioEngine();
+            startGame();
+        });
+
+        function startGame() {
+            gameMode = 'career';
+            budget = 15.0;
+            activeLineId = 'L1';
+            activeTrains = [];
+            stations = [];
+            timeClock = { ticks: 0, dayIndex: 0, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hour: 8, minute: 0, speed: 1 };
+            
+            customLines = [
+                { id: 'L1', name: getRandomLineName(), color: '#10b981', trainsCount: 1, ticketPrice: 2.50 },
+                { id: 'L2', name: getRandomLineName(), color: '#f97316', trainsCount: 1, ticketPrice: 3.00 }
+            ];
+
+            // Initialize route brand form with a clean default name
+            document.getElementById('new-line-name').value = getRandomLineName();
+
+            setupMapSimulation('standard');
+            updateSpeedButtons();
+            updateHUD();
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            renderMap();
+        }
+
+        function mainLoop() {
+            tickClock();
+            updateTrainPhysics();
+            renderMap();
+            requestAnimationFrame(mainLoop);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        setupInputController();
+        mainLoop();
+    </script>
+</body>
+</html>
